@@ -220,7 +220,7 @@ emissao = emissao.style\
     .format(millify, na_rep="--", decimal=",")\
     .format("{:.2%}", na_rep="--", decimal=",",subset="Variação %")\
     .applymap(
-    lambda x: f"color: {'blue' if x > 0 else 'red'};" if isinstance(x, (int, float)) else "",
+    lambda x: f"color: {'#07447E' if x > 0 else '#D92D04'};" if isinstance(x, (int, float)) else "",
     subset = "Variação %"
 )
 st.table(emissao)
@@ -232,7 +232,7 @@ intensidade = intensidade.style\
     .format("{:.2f}", na_rep="--", decimal=",")\
     .format("{:.2%}", na_rep="--", decimal=",",subset="Variação %")\
     .applymap(
-    lambda x: f"color: {'blue' if x > 0 else 'red'};" if isinstance(x, (int, float)) else "",
+    lambda x: f"color: {'#07447E' if x > 0 else '#D92D04'};" if isinstance(x, (int, float)) else "",
     subset = "Variação %"
 )
 st.table(intensidade)
@@ -241,8 +241,8 @@ st.table(intensidade)
 st.write("Participação na Matriz")
 
 participacao = participacao.style\
-    .format("{:.2f}%", na_rep="--", decimal=",").applymap(
-    lambda x: f"color: {'blue' if x > 0 else 'red'};" if isinstance(x, (int, float)) else "",
+    .format("{:.2f}%", na_rep="--", decimal=",").map(
+    lambda x: f"color: {'#07447E' if x > 0 else '#D92D04'};" if isinstance(x, (int, float)) else "",
     subset = "Variação %"
 )
 st.table(participacao)
