@@ -4,8 +4,8 @@ from utils import millify_nodecimals
 import plotly.express as px
 import plotly.graph_objects as go
 
-st.logo('logo.png', icon_image='logo.png',size='large')
-st.set_page_config(page_title="Descarbonização da Matriz de Combustíveis", page_icon="favicon.ico", layout="wide")
+st.logo('data/logo.png', icon_image='data/logo.png',size='large')
+st.set_page_config(page_title="Descarbonização da Matriz de Combustíveis", page_icon="data/favicon.ico", layout="wide")
 
 st.title("Descarbonização da Matriz de Combustíveis")
 subtitle_placeholder = st.empty()
@@ -18,12 +18,12 @@ ciclo = st.sidebar.radio("Ciclo", ("OTTO", "Diesel"),horizontal=True).lower()
 abrangencia = st.sidebar.radio("Abrangência", ("Nacional", "Regional"),horizontal=True)
 
 if abrangencia == "Nacional":
-    df = pd.read_excel("dados.xlsx",sheet_name="8.base_trim_br")
+    df = pd.read_excel("data/dados.xlsx",sheet_name="8.base_trim_br")
     label_col = 'pais'
     regiao = 'BRASIL'
 
 else:
-    df = pd.read_excel("dados.xlsx",sheet_name="7.base_trim_ufs")
+    df = pd.read_excel("data/dados.xlsx",sheet_name="7.base_trim_ufs")
 
     regiao = st.sidebar.selectbox("Região", df["desc_uf"].unique())
     df =  df[df["desc_uf"] == regiao]

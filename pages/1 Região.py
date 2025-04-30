@@ -3,8 +3,8 @@ import pandas as pd
 from utils import millify_nodecimals
 import plotly.express as px
 
-st.logo('logo.png', icon_image='logo.png',size='large')
-st.set_page_config(page_title="Descarbonização da Matriz de Combustíveis", page_icon="favicon.ico", layout="wide")
+st.logo('data/logo.png', icon_image='data/logo.png',size='large')
+st.set_page_config(page_title="Descarbonização da Matriz de Combustíveis", page_icon="data/favicon.ico", layout="wide")
 
 st.title("Descarbonização da Matriz de Combustíveis")
 subtitle_placeholder = st.empty()
@@ -16,7 +16,7 @@ ciclo = st.sidebar.radio("Ciclo", ("OTTO", "Diesel"),horizontal=True).lower()
 tipo_emissao = st.sidebar.radio("Emissões",["Totais","Per capita"],horizontal=True)
 
 
-df = pd.read_excel("dados.xlsx",sheet_name="7.base_trim_ufs")
+df = pd.read_excel("data/dados.xlsx",sheet_name="7.base_trim_ufs")
 
 label_col = 'desc_uf'
 
