@@ -4,7 +4,7 @@ from utils import millify
 
 #### Configs ####
 
-
+st.logo('logo.png', icon_image='logo.png',size='large')
 st.set_page_config(page_title="Descarbonização da Matriz de Combustíveis", page_icon=":bar_chart:", layout="wide")
 
 st.write(
