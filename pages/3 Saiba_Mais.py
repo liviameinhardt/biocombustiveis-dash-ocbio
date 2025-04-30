@@ -1,5 +1,8 @@
 import streamlit as st
 
+st.logo('logo.png', icon_image='logo.png',size='large')
+st.set_page_config(page_title="Saiba Mais", page_icon="favicon.ico", layout="wide")
+
 st.title("QUEM SOMOS")
 st.markdown("---")
 
