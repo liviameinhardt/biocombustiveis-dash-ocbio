@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd 
-from utils import millify_nodecimals
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -13,7 +12,7 @@ subtitle_placeholder = st.empty()
 
 #### Filtros e Dados ####
 
-ciclo = st.sidebar.radio("Ciclo", ("OTTO", "Diesel"),horizontal=True).lower()
+ciclo = st.sidebar.radio("Ciclo", ("OTTO", "Diesel","Comparativo"),horizontal=True).lower()
 
 abrangencia = st.sidebar.radio("Abrangência", ("Nacional", "Regional"),horizontal=True)
 
@@ -32,132 +31,188 @@ else:
 subtitle =  f"{df['ano'].min()} - {df['ano'].max()} | {regiao.title()}"
 st.subheader(subtitle)
 
-#selecionar colunas 
-total = f"emissao_total_{'c' + ciclo if ciclo == 'diesel' else ciclo}_tco2"
-evitada = f"emissao_evitada_{'c' + ciclo if ciclo == 'diesel' else ciclo}_tco2"
-ic_total = f"ic_matriz_{ciclo}_gco2_mj"
+if ciclo == "comparativo":
 
-col_names = {        
-        total: "Emissão de GEE (t CO2eq)",
-        evitada: "Emissão Evitada (t CO2eq)",
+    col_names = {'emissao_total_cdiesel_tco2': "Emissão Total - Diesel (t CO2eq)",
+                'emissao_total_otto_tco2': "Emissão Total - Otto (t CO2eq)",
+                'emissao_evitada_cdiesel_tco2': "Emissão Evitada - Diesel (t CO2eq)",
+                'emissao_evitada_otto_tco2': "Emissão Evitada - Otto (t CO2eq)",
+    }
 
-        ic_total: "Total (gCO2eq/MJ)",
+    fig = go.Figure()
 
-        "ic_gasolina_a_gco2_mj": "Gasolina A (gCO2eq/MJ)",
-        "ic_etanol_hidratado_gco2_mj": "Etanol Hidratado (gCO2eq/MJ)",
-        "ic_etano_anidro_gco2_mj": "Etanol Anidro (gCO2eq/MJ)",
+    for col, col_name in col_names.items():
+        fig.add_trace(go.Scatter(
+            x=df.index, 
+            y=df[col], 
+            name=col_name,
+            mode='lines+markers',
+        ))
+
+    fig.update_layout(
+        title=f"Emissões Totais de GEE e Evitadas por Renováveis por UF | {subtitle}",
+        xaxis_title="Trimestre",
+        yaxis_title="Emissões (t CO2eq)",
+        legend_title="Tipo de Emissão"
+    )
+
+    st.plotly_chart(fig,use_container_width=True)
+
+    ### Intensidade de Carbono da Matriz de Combustível ###
     
-        "part_gasolina_a_%": "Gasolina A",
-        "part_hidratado_%": "Etanol Hidratado",
-        "part_anidro_%": "Etanol Anidro",
+    fig = go.Figure()
 
-        "ic_diesel_gco2_mj": "Diesel (gCO2eq/MJ)",
-        "ic_biodiesel_gco2_mj": "Biodiesel (gCO2eq/MJ)",
+    col_names = {
+        "ic_matriz_diesel_gco2_mj": "Diesel (gCO2eq/MJ)",
+        "ic_matriz_otto_gco2_mj": "Otto (gCO2eq/MJ)",
+    }
 
-        "part_diesel_%": "Diesel",
-        "part_biodiesel_%": "Biodiesel",}
+    for col, col_name in col_names.items():
+        fig.add_trace(go.Scatter(
+            x=df.index, 
+            y=df[col], 
+            name=col_name,
+            mode='lines+markers',
+        ))
+
+    fig.update_layout(
+        title=f"Intensidade Total de Carbono da Matriz de Combustível {subtitle}",
+        xaxis_title="Trimestre",
+        yaxis_title="gCO2eq/MJ",
+        legend_title="Tipo de Combustível",
+
+    )
+
+    st.plotly_chart(fig,use_container_width=True)
 
 
-df = df.set_index("trim_ano")[list(col_names.keys())]
+else:
 
-### Gráficos ###
-fig = go.Figure()
+    
+    total = f"emissao_total_{'c' + ciclo if ciclo == 'diesel' else ciclo}_tco2"
+    evitada = f"emissao_evitada_{'c' + ciclo if ciclo == 'diesel' else ciclo}_tco2"
+    ic_total = f"ic_matriz_{ciclo}_gco2_mj"
 
-fig.add_trace(go.Scatter(x=df.index, y=df[total], mode='lines+markers', name='Totais'))
-fig.add_trace(go.Scatter(x=df.index, y=df[evitada], mode='lines+markers', name='Evitadas'))
+    col_names = {        
+            total: "Emissão de GEE (t CO2eq)",
+            evitada: "Emissão Evitada (t CO2eq)",
 
-fig.update_layout(
-    title=f"Emissões Totais de GEE e Evitadas por Renováveis por UF | Ciclo {ciclo}, {subtitle}",
-    xaxis_title="Trimestre",
-    yaxis_title="Emissões (t CO2eq)",
-    legend_title="Tipo de Emissão"
-)
+            ic_total: "Total (gCO2eq/MJ)",
 
-st.plotly_chart(fig,use_container_width=True)
+            "ic_gasolina_a_gco2_mj": "Gasolina A (gCO2eq/MJ)",
+            "ic_etanol_hidratado_gco2_mj": "Etanol Hidratado (gCO2eq/MJ)",
+            "ic_etano_anidro_gco2_mj": "Etanol Anidro (gCO2eq/MJ)",
+        
+            "part_gasolina_a_%": "Gasolina A",
+            "part_hidratado_%": "Etanol Hidratado",
+            "part_anidro_%": "Etanol Anidro",
 
-#intensidade de carbono
+            "ic_diesel_gco2_mj": "Diesel (gCO2eq/MJ)",
+            "ic_biodiesel_gco2_mj": "Biodiesel (gCO2eq/MJ)",
 
-if ciclo == "otto":
-    ic_cols = [
-        "ic_gasolina_a_gco2_mj",
-        "ic_etanol_hidratado_gco2_mj",
-        "ic_etano_anidro_gco2_mj",
+            "part_diesel_%": "Diesel",
+            "part_biodiesel_%": "Biodiesel",}
+
+    df = df.set_index("trim_ano")[list(col_names.keys())]
+
+    ## Gráficos ##
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(x=df.index, y=df[total], mode='lines+markers', name='Totais'))
+    fig.add_trace(go.Scatter(x=df.index, y=df[evitada], mode='lines+markers', name='Evitadas'))
+
+    fig.update_layout(
+        title=f"Emissões Totais de GEE e Evitadas por Renováveis por UF | Ciclo {ciclo}, {subtitle}",
+        xaxis_title="Trimestre",
+        yaxis_title="Emissões (t CO2eq)",
+        legend_title="Tipo de Emissão"
+    )
+
+    st.plotly_chart(fig,use_container_width=True)
+
+
+    #intensidade de carbono
+    if ciclo == "otto":
+        ic_cols = [
+            "ic_gasolina_a_gco2_mj",
+            "ic_etanol_hidratado_gco2_mj",
+            "ic_etano_anidro_gco2_mj",
+            ]
+
+    else:
+        ic_cols = [
+            "ic_diesel_gco2_mj",
+            "ic_biodiesel_gco2_mj"
         ]
 
-else:
-    ic_cols = [
-        "ic_diesel_gco2_mj",
-        "ic_biodiesel_gco2_mj"
-    ]
+    fig = go.Figure()
 
-fig = go.Figure()
-
-# Add trace for total carbon intensity
-fig.add_trace(go.Scatter(
-    x=df.index, 
-    y=df[ic_total], 
-    mode='lines+markers',
-    name=col_names[ic_total],
-    marker=dict(size=10),
-    # yaxis='y2'
-))
-
-# Add stacked bar traces for individual fuel types
-for col in ic_cols:
     fig.add_trace(go.Scatter(
         x=df.index, 
-        y=df[col], 
-        name=col_names[col],
+        y=df[ic_total], 
         mode='lines+markers',
-        # yaxis='y'
+        name=col_names[ic_total],
+        marker=dict(size=10),
     ))
 
-# Update layout with dual y-axes
-fig.update_layout(
-    title=f"Intensidade de Carbono da Matriz de Combustível - Ciclo {ciclo}, {subtitle}",
-    xaxis_title="Trimestre",
-    yaxis_title="gCO2eq/MJ",
-    legend_title="Tipo de Combustível",
-    # yaxis2=dict(
-    #     title="Intensidade de Carbono (gCO2eq/MJ)",
-    #     overlaying='y',
-    #     side='right'
-    # ),
-    # barmode="stack",
-)
+    for col in ic_cols:
+        fig.add_trace(go.Scatter(
+            x=df.index, 
+            y=df[col], 
+            name=col_names[col],
+            mode='lines+markers',
+        ))
 
-# Render the chart in Streamlit
-st.plotly_chart(fig, use_container_width=True)
+    fig.update_layout(
+        title=f"Intensidade de Carbono da Matriz de Combustível - Ciclo {ciclo}, {subtitle}",
+        xaxis_title="Trimestre",
+        yaxis_title="gCO2eq/MJ",
+        legend_title="Tipo de Combustível",
 
-#participacao 
+    )
 
-if ciclo == "otto":
-    ic_cols = ["part_gasolina_a_%",
-            "part_hidratado_%",
-            "part_anidro_%",]
+    st.plotly_chart(fig, use_container_width=True)
 
-else:
-    ic_cols = ["part_diesel_%",
-    "part_biodiesel_%"]
+    #participacao 
+    if ciclo == "otto":
+        ic_cols = ["part_gasolina_a_%",
+                "part_hidratado_%",
+                "part_anidro_%",]
 
-fig = go.Figure()
+    else:
+        ic_cols = ["part_diesel_%",
+                    "part_biodiesel_%"]
 
-for col in ic_cols:
-    fig.add_trace(go.Scatter(
-        x=df.index, 
-        y=df[col]*100, 
-        name=col_names[col],
-        mode='lines+markers',
-        # yaxis='y'
-    ))
+    fig = go.Figure()
 
-# Update layout with dual y-axes
-fig.update_layout(
-    title=f"Participação dos Energéticos na Matriz de Combustíveis - Ciclo {ciclo}, {subtitle}",
-    xaxis_title="Trimestre",
-    yaxis_title="%",
-    legend_title="Tipo de Combustível",
-)
+    for col in ic_cols:
 
-# Render the chart in Streamlit
-st.plotly_chart(fig, use_container_width=True)
+        fig.add_trace(go.Scatter(
+            x=df.index, 
+            y=df[col]*100, 
+            name=col_names[col],
+            mode='lines+markers',
+        ))
+
+    fig.update_layout(
+        title=f"Participação dos Energéticos na Matriz de Combustíveis - Ciclo {ciclo}, {subtitle}",
+        xaxis_title="Trimestre",
+        yaxis_title="%",
+        legend_title="Tipo de Combustível",
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
+
+### download button ###
+st.sidebar.markdown("---")
+
+with open("data/dados.xlsx", "rb") as file:
+    st.sidebar.download_button(
+        label="Download Excel file",
+        data=file,
+        file_name="Biocombustiveis-OCBIO.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )

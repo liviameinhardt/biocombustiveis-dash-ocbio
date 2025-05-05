@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd 
-from utils import millify_nodecimals
 import plotly.express as px
 
 st.logo('data/logo.png', icon_image='data/logo.png',size='large')
@@ -11,10 +10,10 @@ subtitle_placeholder = st.empty()
 
 #### Filtros e Dados ####
 
-ciclo = st.sidebar.radio("Ciclo", ("OTTO", "Diesel"),horizontal=True).lower()
+ciclo = st.sidebar.radio("Ciclo", ("OTTO", "Diesel","Comparativo"),horizontal=True).lower()
 
 tipo_emissao = st.sidebar.radio("Emissões",["Totais","Per capita"],horizontal=True)
-
+per_capita_label = "Per Capita" if tipo_emissao == "Per capita" else ""
 
 df = pd.read_excel("data/dados.xlsx",sheet_name="7.base_trim_ufs")
 
@@ -47,32 +46,75 @@ subtitle_placeholder.subheader(subtitle)
 
 ### Graficos ###
 
-if tipo_emissao == "Totais":
-    total = f"emissao_total_{'c' + ciclo if ciclo == 'diesel' else ciclo}_tco2"
-    evitada = f"emissao_evitada_{'c' + ciclo if ciclo == 'diesel' else ciclo}_tco2"
+if ciclo == "comparativo":
+
+    if tipo_emissao == "Totais":
+        total = ["emissao_total_cdiesel_tco2", "emissao_total_otto_tco2"]
+        evitada = ["emissao_evitada_cdiesel_tco2", "emissao_evitada_otto_tco2"]
+    else:
+        total = ["emissao_per_capita_cdiesel", "emissao_per_capita_otto"]
+        evitada = ["emissao_evitada_per_capita_cdiesel", "emissao_evitada_per_capita_otto"]
+
+    df = df[total + evitada]
+    columns_class = {'Totais':total, 'Evitadas':evitada}
+
+    for col in ['Totais','Evitadas']:
+
+        df[col] = df[columns_class[col]].sum(axis=1)
+
+        labels = {columns_class[col][0]:'Diesel', columns_class[col][1]:'Otto'}
+
+        fig = px.bar(df.sort_values(col)\
+                            .rename(columns=labels) ,
+                    y=['Diesel','Otto'], 
+                    text_auto='.2s',
+                    labels={"value": f"Emissões {col} {per_capita_label}", "sigla_uf": "Unidade Federativa","variable":"Ciclo"},
+                    title=f"Emissões {col} {per_capita_label} de Gases de Efeito Estufa por UF | {subtitle}<br><sup>Comparação Ciclos Diesel e Otto"
+                    )
+
+        fig.update_layout(legend=dict(orientation="h",yanchor="bottom",y=1.02,xanchor="right",x=1))
+
+        st.plotly_chart(fig,use_container_width=True)
 
 else:
-    total = f"emissao_per_capita_{'c' + ciclo if ciclo == 'diesel' else ciclo}"
-    evitada = f"emissao_evitada_per_capita_{'c' + ciclo if ciclo == 'diesel' else ciclo}"
+    
+    if tipo_emissao == "Totais":
+        total = f"emissao_total_{'c' + ciclo if ciclo == 'diesel' else ciclo}_tco2"
+        evitada = f"emissao_evitada_{'c' + ciclo if ciclo == 'diesel' else ciclo}_tco2"
+    else:
+        total = f"emissao_per_capita_{'c' + ciclo if ciclo == 'diesel' else ciclo}"
+        evitada = f"emissao_evitada_per_capita_{'c' + ciclo if ciclo == 'diesel' else ciclo}"
 
-df = df[[total,evitada]]
-for col in df.columns:
-    df[f'formated_{col}'] = df[col].apply(millify_nodecimals)
+    df = df[[total, evitada]]
 
-#emissoes totais 
-fig = px.bar(df.sort_values(total),y=total, 
-             labels={total:"Emissões Totais","sigla_uf":"Unidade Federativa",f'formated_{total}':'Emissões Totais'},
-             text=f"formated_{total}",
-             title=f"Emissões Totais de Gases de Efeito Estufa por UF | Ciclo {ciclo}, {subtitle}"
-             )
 
-st.plotly_chart(fig,use_container_width=True)
+    #emissoes totais 
+    fig = px.bar(df.sort_values(total),y=total, 
+                labels={total:f"Emissões Totais {per_capita_label}","sigla_uf":"Unidade Federativa",f'formated_{total}':'Emissões Totais'},
+                text_auto='.2s',
+                title=f"Emissões Totais {per_capita_label} de Gases de Efeito Estufa por UF | Ciclo {ciclo}, {subtitle}"
+                )
 
-#emissoes per capita 
-fig = px.bar(df.sort_values(evitada),y=evitada, 
-             labels={evitada:"Emissões Evitadas","sigla_uf":"Unidade Federativa",f'formated_{evitada}':'Emissões Evitadas'},
-             text=f"formated_{evitada}",
-             title=f"Emissões Evitadas por Combustíveis Renováveis por UF | Ciclo {ciclo}, {subtitle}"
-             )
+    st.plotly_chart(fig,use_container_width=True)
 
-st.plotly_chart(fig,use_container_width=True)
+    #emissoes per capita 
+    fig = px.bar(df.sort_values(evitada),y=evitada, 
+                labels={evitada:f"Emissões Evitadas {per_capita_label}","sigla_uf":"Unidade Federativa",f'formated_{evitada}':'Emissões Evitadas'},
+                text_auto='.2s',
+                title=f"Emissões Evitadas {per_capita_label} por Combustíveis Renováveis por UF | Ciclo {ciclo}, {subtitle}"
+                )
+
+    st.plotly_chart(fig,use_container_width=True)
+
+
+
+### download button ###
+st.sidebar.markdown("---")
+
+with open("data/dados.xlsx", "rb") as file:
+    st.sidebar.download_button(
+        label="Download Excel file",
+        data=file,
+        file_name="Biocombustiveis-OCBIO.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )

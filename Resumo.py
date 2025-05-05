@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd 
-from utils import millify
+from utils import millify, convert_for_download
 
 #### Configs ####
 
@@ -20,7 +20,6 @@ st.write(
 
 st.title("Descarbonização da Matriz de Combustíveis")
 subtitle_placeholder = st.empty()
-# st.markdown("##")
 
 
 #### Filtros e Dados ####
@@ -40,8 +39,6 @@ else:
     regiao = st.sidebar.selectbox("Região", df["desc_uf"].unique())
     df =  df[df["desc_uf"] == regiao]
     label_col = 'desc_uf'
-    
-
 
 agregacao_a = st.sidebar.radio("Agregação", ("Trimestre", "Ano"),
                                format_func=lambda x: {"Trimestre":"Trimestral", "Ano":"Anual"}[x],
@@ -82,6 +79,7 @@ df_anterior.columns = [f"{agregacao_a} Anterior"]
 
 df = df[f"{agregacao_a} Atual"]
 df_anterior = df_anterior[f"{agregacao_a} Anterior"]
+
 
 #### Métricas Resumo ####
 
@@ -247,3 +245,14 @@ participacao = participacao.style\
 )
 st.table(participacao)
 
+
+### download button ###
+st.sidebar.markdown("---")
+
+with open("data/dados.xlsx", "rb") as file:
+    st.sidebar.download_button(
+        label="Download Excel file",
+        data=file,
+        file_name="Biocombustiveis-OCBIO.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
